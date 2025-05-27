@@ -86,7 +86,6 @@ public class RegistroMedicamentoActivity extends AppCompatActivity {
                 .putString(MedicamentoNotificationWorker.EXTRA_MEDICAMENTO_DOSIS, medicamento.getDosis())
                 .build();
 
-        // Nota: el mínimo para PeriodicWorkRequest es 15 minutos (no menos)
         long intervalHours = Math.max(medicamento.getFrecuenciaHoras(), 1); // mínimo 1 hora
         long intervalMinutes = intervalHours * 60;
 
@@ -98,6 +97,7 @@ public class RegistroMedicamentoActivity extends AppCompatActivity {
 
         WorkManager.getInstance(this).enqueue(periodicRequest);
     }
+
     private void guardarMedicamento() {
         String nombre = etNombre.getText().toString().trim();
         String tipo = spinnerTipo.getText().toString().trim();
@@ -144,7 +144,9 @@ public class RegistroMedicamentoActivity extends AppCompatActivity {
 
         Medicamento medicamento = new Medicamento(nombre, tipo, dosis, frecuencia, fechaInicio);
         medicamentoRepository.addMedicamento(medicamento);
-        scheduleMedicationNotification(medicamento);
+        scheduleMedicationNotification(medicamento); // programa la notificación periódica
+
+
 
         Toast.makeText(this, "Medicamento guardado", Toast.LENGTH_SHORT).show();
         finish();
