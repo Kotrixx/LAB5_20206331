@@ -1,25 +1,24 @@
 package com.example.lab5_20206331;
 
-import android.annotation.SuppressLint;
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.view.Window;
-import android.view.WindowManager;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -31,10 +30,17 @@ public class MainActivity extends AppCompatActivity {
 
     private ImageView ivProfileImage;
     private TextView tvGreeting, tvMotivationalMessage;
+    private Button btnViewMedications, btnSettings;
 
     private UserPreferences userPreferences;
 
-    @SuppressLint("SetTextI18n")
+    // Lanzador para pedir permiso galería y abrir galería
+    private ActivityResultLauncher<String> requestGalleryPermissionLauncher;
+    private ActivityResultLauncher<Intent> pickImageLauncher;
+
+    // Lanzador para pedir permiso notificaciones (Android 13+)
+    private ActivityResultLauncher<String> requestNotificationPermissionLauncher;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -45,97 +51,142 @@ public class MainActivity extends AppCompatActivity {
         ivProfileImage = findViewById(R.id.iv_profile_image);
         tvGreeting = findViewById(R.id.tv_greeting);
         tvMotivationalMessage = findViewById(R.id.tv_motivational_message);
-        Button btnViewMedications = findViewById(R.id.btn_view_medications);
-        Button btnSettings = findViewById(R.id.btn_settings);
+        btnViewMedications = findViewById(R.id.btn_view_medications);
+        btnSettings = findViewById(R.id.btn_settings);
 
-        // Mostrar saludo dinámico (puedes mejorar para poner el nombre real)
-        tvGreeting.setText("¡Hola, " + userPreferences.getUserName() + "!");
+        // Mostrar saludo y mensaje
+        updateGreetingAndMessage();
 
-        // Mostrar mensaje motivacional guardado
-        tvMotivationalMessage.setText(userPreferences.getMotivationalMessage());
-
-        // Carga imagen guardada si existe
+        // Cargar imagen
         loadProfileImage();
 
-        // Listener para cambiar imagen
-        ivProfileImage.setOnClickListener(v -> openGalleryForImage());
+        // Lanzadores
+        setupActivityResultLaunchers();
 
-        // Listener para "Ver mis medicamentos"
+        // Imagen: al tocar, pide permiso o abre galería
+        ivProfileImage.setOnClickListener(v -> {
+            if (checkGalleryPermission()) {
+                openGallery();
+            } else {
+                requestGalleryPermissionLauncher.launch(getGalleryPermission());
+            }
+        });
+
         btnViewMedications.setOnClickListener(v -> {
-            Intent intent = new Intent(this, MedicamentosActivity.class);
-            startActivity(intent);
+            startActivity(new Intent(this, MedicamentosActivity.class));
         });
 
-        // Listener para "Configuraciones"
         btnSettings.setOnClickListener(v -> {
-            Intent intent = new Intent(this, SettingsActivity.class);
-            startActivity(intent);
+            startActivity(new Intent(this, SettingsActivity.class));
         });
+
+        // Al inicio, pedir permiso de notificaciones si es necesario
+        checkAndRequestNotificationPermission();
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-
-        // Actualizar el mensaje motivacional al volver a la pantalla
-        String mensaje = userPreferences.getMotivationalMessage();
-        tvMotivationalMessage.setText(mensaje);
-
-        // Si actualizaste también el nombre, actualiza saludo si quieres
+    private void updateGreetingAndMessage() {
         String nombre = userPreferences.getUserName();
+        String mensaje = userPreferences.getMotivationalMessage();
         tvGreeting.setText("¡Hola, " + nombre + "!");
-    }
-    private void openGalleryForImage() {
-        Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-        startActivityForResult(intent, PICK_IMAGE_REQUEST_CODE);
+        tvMotivationalMessage.setText(mensaje);
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
+    private void setupActivityResultLaunchers() {
+        // Permiso galería
+        requestGalleryPermissionLauncher = registerForActivityResult(
+                new ActivityResultContracts.RequestPermission(),
+                isGranted -> {
+                    if (isGranted) {
+                        openGallery();
+                    } else {
+                        Toast.makeText(this, "Permiso de galería denegado", Toast.LENGTH_SHORT).show();
+                    }
+                });
 
-        if (requestCode == PICK_IMAGE_REQUEST_CODE && resultCode == RESULT_OK && data != null) {
-            Uri imageUri = data.getData();
+        // Abrir galería para seleccionar imagen
+        pickImageLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                        Uri imageUri = result.getData().getData();
+                        if (imageUri != null) {
+                            ivProfileImage.setImageURI(imageUri);
+                            saveImageToInternalStorage(imageUri);
+                        }
+                    }
+                });
 
-            ivProfileImage.setImageURI(imageUri); // Mostrar imagen seleccionada
+        // Permiso notificaciones (Android 13+)
+        requestNotificationPermissionLauncher = registerForActivityResult(
+                new ActivityResultContracts.RequestPermission(),
+                isGranted -> {
+                    if (isGranted) {
+                        Toast.makeText(this, "Permiso de notificaciones concedido", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(this, "Permiso de notificaciones denegado", Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
 
-            saveImageToInternalStorage(imageUri);
+    private boolean checkGalleryPermission() {
+        return ContextCompat.checkSelfPermission(this, getGalleryPermission()) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private String getGalleryPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            return Manifest.permission.READ_MEDIA_IMAGES;  // Android 13+
+        } else {
+            return Manifest.permission.READ_EXTERNAL_STORAGE; // Android < 13
         }
+    }
+
+    private void openGallery() {
+        Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        pickImageLauncher.launch(intent);
     }
 
     private void saveImageToInternalStorage(Uri imageUri) {
         try {
             InputStream inputStream = getContentResolver().openInputStream(imageUri);
-            File file = new File(getFilesDir(), "profile_image.jpg"); // Nombre fijo para reemplazar
+            File file = new File(getFilesDir(), "profile_image.jpg");
 
             FileOutputStream outputStream = new FileOutputStream(file);
             byte[] buffer = new byte[1024];
             int length;
-
             while ((length = inputStream.read(buffer)) > 0) {
                 outputStream.write(buffer, 0, length);
             }
-
             outputStream.close();
             inputStream.close();
 
-            // Guardar ruta en SharedPreferences para cargar luego
             userPreferences.saveProfileImagePath(file.getAbsolutePath());
-
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     private void loadProfileImage() {
-        String imagePath = userPreferences.getProfileImagePath();
-        if (imagePath != null) {
-            File imgFile = new File(imagePath);
-            if (imgFile.exists()) {
-                Bitmap bitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
+        String path = userPreferences.getProfileImagePath();
+        if (path != null) {
+            File file = new File(path);
+            if (file.exists()) {
+                Bitmap bitmap = BitmapFactory.decodeFile(path);
                 ivProfileImage.setImageBitmap(bitmap);
             }
         }
     }
-}
 
+    private void checkAndRequestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                requestNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
+            }
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        updateGreetingAndMessage();
+    }
+}

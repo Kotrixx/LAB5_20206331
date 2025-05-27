@@ -39,6 +39,17 @@
 
     </androidx.appcompat.widget.Toolbar>
 
+    <TextView
+        android:id="@+id/tv_empty"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="No hay medicamentos registrados"
+        android:textSize="18sp"
+        android:textColor="#666666"
+        android:gravity="center"
+        android:visibility="gone"
+        android:layout_marginTop="24dp" />
+
     <!-- Medications List -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_medications"

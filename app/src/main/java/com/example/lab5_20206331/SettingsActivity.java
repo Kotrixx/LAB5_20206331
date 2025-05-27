@@ -8,6 +8,11 @@ import android.widget.TimePicker;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.work.Data;
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.WorkManager;
+
+import java.util.concurrent.TimeUnit;
 
 public class SettingsActivity extends AppCompatActivity {
 
@@ -16,7 +21,21 @@ public class SettingsActivity extends AppCompatActivity {
     private Button btnSave;
 
     private UserPreferences userPreferences;
+    private void scheduleMotivationalNotification(String message, int hour, int minute) {
+        Data inputData = new Data.Builder()
+                .putString("motivational_message", message)
+                .build();
 
+        // Por simplicidad programamos repetición cada X horas (ejemplo: 24 horas)
+        // Aquí podrías usar la hora y minuto para un AlarmManager más preciso si quieres
+        PeriodicWorkRequest periodicRequest = new PeriodicWorkRequest.Builder(
+                MotivationalNotificationWorker.class,
+                24, TimeUnit.HOURS)  // O la frecuencia que quieras configurar
+                .setInputData(inputData)
+                .build();
+
+        WorkManager.getInstance(this).enqueue(periodicRequest);
+    }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -52,10 +71,13 @@ public class SettingsActivity extends AppCompatActivity {
             int minute = timePickerReminder.getMinute();
             userPreferences.saveReminderTime(hour, minute);
 
+            scheduleMotivationalNotification(newMessage, hour, minute);
+
             Toast.makeText(this, "Configuración guardada", Toast.LENGTH_SHORT).show();
 
             finish();
         });
+
     }
 
 }

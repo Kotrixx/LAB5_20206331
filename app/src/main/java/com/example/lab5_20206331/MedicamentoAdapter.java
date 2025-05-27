@@ -43,7 +43,7 @@ public class MedicamentoAdapter extends RecyclerView.Adapter<MedicamentoAdapter.
     public void onBindViewHolder(@NonNull MedicamentoAdapter.ViewHolder holder, int position) {
         Medicamento med = listaMedicamentos.get(position);
         holder.tvName.setText(med.getNombre());
-        String details = med.getDosis() + " - Cada " + med.getFrecuenciaHoras() + " horas";
+        String details = med.getDosis() + " " + med.getTipo() +" - Cada " + med.getFrecuenciaHoras() + " horas";
         holder.tvDetails.setText(details);
         holder.tvTimeSince.setText("Desde: " + med.getFechaHoraInicio());
 
