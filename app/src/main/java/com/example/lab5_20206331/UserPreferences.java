@@ -9,6 +9,8 @@ public class UserPreferences {
     private static final String KEY_USER_NAME = "user_name";
     private static final String KEY_MOTIVATIONAL_MESSAGE = "motivational_message";
     private static final String KEY_PROFILE_IMAGE_PATH = "profile_image";
+    private static final String KEY_REMINDER_HOUR = "reminder_hour";
+    private static final String KEY_REMINDER_MINUTE = "reminder_minute";
 
     private SharedPreferences prefs;
 
@@ -29,7 +31,7 @@ public class UserPreferences {
     }
 
     public String getMotivationalMessage() {
-        return prefs.getString(KEY_MOTIVATIONAL_MESSAGE, "¡Bienvenido Estimados, como se encuenran!");
+        return prefs.getString(KEY_MOTIVATIONAL_MESSAGE, "¡Bienvenido!");
     }
 
     public void saveProfileImagePath(String path) {
@@ -38,5 +40,21 @@ public class UserPreferences {
 
     public String getProfileImagePath() {
         return prefs.getString(KEY_PROFILE_IMAGE_PATH, null);
+    }
+
+    // NUEVAS FUNCIONES PARA HORA DE RECORDATORIO
+    public void saveReminderTime(int hour, int minute) {
+        prefs.edit()
+                .putInt(KEY_REMINDER_HOUR, hour)
+                .putInt(KEY_REMINDER_MINUTE, minute)
+                .apply();
+    }
+
+    public int getReminderHour() {
+        return prefs.getInt(KEY_REMINDER_HOUR, 8); // default 8 AM
+    }
+
+    public int getReminderMinute() {
+        return prefs.getInt(KEY_REMINDER_MINUTE, 0); // default 0 min
     }
 }

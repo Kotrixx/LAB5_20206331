@@ -1,5 +1,6 @@
 package com.example.lab5_20206331;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -29,25 +30,61 @@ public class MainActivity extends AppCompatActivity {
     private static final int PICK_IMAGE_REQUEST_CODE = 1001;
 
     private ImageView ivProfileImage;
+    private TextView tvGreeting, tvMotivationalMessage;
+
     private UserPreferences userPreferences;
 
+    @SuppressLint("SetTextI18n")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // ... tu código setupStatusBar, edgeToEdge, etc.
         setContentView(R.layout.activity_main);
 
         userPreferences = new UserPreferences(this);
 
         ivProfileImage = findViewById(R.id.iv_profile_image);
+        tvGreeting = findViewById(R.id.tv_greeting);
+        tvMotivationalMessage = findViewById(R.id.tv_motivational_message);
+        Button btnViewMedications = findViewById(R.id.btn_view_medications);
+        Button btnSettings = findViewById(R.id.btn_settings);
+
+        // Mostrar saludo dinámico (puedes mejorar para poner el nombre real)
+        tvGreeting.setText("¡Hola, " + userPreferences.getUserName() + "!");
+
+        // Mostrar mensaje motivacional guardado
+        tvMotivationalMessage.setText(userPreferences.getMotivationalMessage());
 
         // Carga imagen guardada si existe
         loadProfileImage();
 
-        // Cuando presionen la imagen abrir galería
+        // Listener para cambiar imagen
         ivProfileImage.setOnClickListener(v -> openGalleryForImage());
+
+        // Listener para "Ver mis medicamentos"
+        btnViewMedications.setOnClickListener(v -> {
+            Intent intent = new Intent(this, MedicamentosActivity.class);
+            startActivity(intent);
+        });
+
+        // Listener para "Configuraciones"
+        btnSettings.setOnClickListener(v -> {
+            Intent intent = new Intent(this, SettingsActivity.class);
+            startActivity(intent);
+        });
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        // Actualizar el mensaje motivacional al volver a la pantalla
+        String mensaje = userPreferences.getMotivationalMessage();
+        tvMotivationalMessage.setText(mensaje);
+
+        // Si actualizaste también el nombre, actualiza saludo si quieres
+        String nombre = userPreferences.getUserName();
+        tvGreeting.setText("¡Hola, " + nombre + "!");
+    }
     private void openGalleryForImage() {
         Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         startActivityForResult(intent, PICK_IMAGE_REQUEST_CODE);
