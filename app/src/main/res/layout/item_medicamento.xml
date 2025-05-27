@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="12dp"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="2dp"
+    android:background="@android:color/white">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp">
+
+        <!-- Medication Info -->
+        <LinearLayout
+            android:id="@+id/medication_info"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_toLeftOf="@+id/btn_delete"
+            android:orientation="vertical">
+
+            <!-- Medication Name -->
+            <TextView
+                android:id="@+id/tv_medication_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Amoxicilina"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="#333333"
+                android:layout_marginBottom="4dp" />
+
+            <!-- Medication Details -->
+            <TextView
+                android:id="@+id/tv_medication_details"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="1 tableta - Cada 8 horas"
+                android:textSize="14sp"
+                android:textColor="#666666"
+                android:layout_marginBottom="4dp" />
+
+            <!-- Time Since -->
+            <TextView
+                android:id="@+id/tv_time_since"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Desde: 26/05/2025 07:10 p. m."
+                android:textSize="12sp"
+                android:textColor="#999999" />
+
+        </LinearLayout>
+
+        <!-- Delete Button -->
+        <ImageView
+            android:id="@+id/btn_delete"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            android:src="@drawable/ic_delete"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:padding="4dp"
+            app:tint="#FF5722" />
+
+    </RelativeLayout>
+
+</androidx.cardview.widget.CardView>

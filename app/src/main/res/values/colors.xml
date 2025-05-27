@@ -2,4 +2,14 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="teal_500">#4DB6AC</color>
+    <color name="teal_primary">#4DB6AC</color>
+    <color name="colorBackground">#4DB6AC</color>
+    <color name="background_light">#FFFFFFFF</color>
+    <color name="text_primary">#333333</color>      <!-- texto principal, oscuro -->
+    <color name="text_secondary">#666666</color>    <!-- texto secundario, gris medio -->
+    <color name="text_tertiary">#999999</color>     <!-- texto terciario, gris claro -->
+    <color name="button_black">#424242</color>      <!-- negro grisáceo para botón negro -->
+    <color name="delete_red">#FF5722</color>        <!-- rojo para eliminar (opcional) -->
+
 </resources>
