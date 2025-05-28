@@ -10,6 +10,7 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.work.WorkManager;
 
 import com.example.lab5_20206331.model.Medicamento;
 import com.example.lab5_20206331.repository.MedicamentoRepository;
@@ -47,7 +48,17 @@ public class MedicamentosActivity extends AppCompatActivity {
                     .setTitle("Confirmar eliminación")
                     .setMessage("¿Quieres eliminar este medicamento?")
                     .setPositiveButton("Sí", (dialog, which) -> {
+                        // Obtener medicamento a eliminar
+                        Medicamento medicamentoAEliminar = listaMedicamentos.get(position);
+
+                        // Cancelar notificación programada (WorkManager) usando tag
+                        String workTag = "medicamento_" + medicamentoAEliminar.getNombre();
+                        WorkManager.getInstance(this).cancelAllWorkByTag(workTag);
+
+                        // Eliminar medicamento del repositorio y lista
                         medicamentoRepository.removeMedicamento(position);
+
+                        // Refrescar vista
                         refreshMedicamentos();
                     })
                     .setNegativeButton("No", null)

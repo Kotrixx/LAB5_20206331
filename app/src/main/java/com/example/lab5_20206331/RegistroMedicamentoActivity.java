@@ -11,6 +11,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.work.Data;
+import androidx.work.ExistingPeriodicWorkPolicy;
 import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkManager;
 
@@ -79,24 +80,6 @@ public class RegistroMedicamentoActivity extends AppCompatActivity {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
         etFechaInicio.setText(sdf.format(calendar.getTime()));
     }
-    private void scheduleMedicationNotification(Medicamento medicamento) {
-        Data inputData = new Data.Builder()
-                .putString(MedicamentoNotificationWorker.EXTRA_MEDICAMENTO_NOMBRE, medicamento.getNombre())
-                .putString(MedicamentoNotificationWorker.EXTRA_MEDICAMENTO_TIPO, medicamento.getTipo())
-                .putString(MedicamentoNotificationWorker.EXTRA_MEDICAMENTO_DOSIS, medicamento.getDosis())
-                .build();
-
-        long intervalHours = Math.max(medicamento.getFrecuenciaHoras(), 1); // mínimo 1 hora
-        long intervalMinutes = intervalHours * 60;
-
-        PeriodicWorkRequest periodicRequest = new PeriodicWorkRequest.Builder(
-                MedicamentoNotificationWorker.class,
-                intervalMinutes, TimeUnit.MINUTES)
-                .setInputData(inputData)
-                .build();
-
-        WorkManager.getInstance(this).enqueue(periodicRequest);
-    }
 
     private void guardarMedicamento() {
         String nombre = etNombre.getText().toString().trim();
@@ -144,11 +127,64 @@ public class RegistroMedicamentoActivity extends AppCompatActivity {
 
         Medicamento medicamento = new Medicamento(nombre, tipo, dosis, frecuencia, fechaInicio);
         medicamentoRepository.addMedicamento(medicamento);
-        scheduleMedicationNotification(medicamento); // programa la notificación periódica
 
-
+        // Programa recordatorio usando WorkManager con tag único (nombre)
+        scheduleMedicationNotification(medicamento);
 
         Toast.makeText(this, "Medicamento guardado", Toast.LENGTH_SHORT).show();
         finish();
     }
+
+    private void scheduleMedicationNotification(Medicamento medicamento) {
+        Data inputData = new Data.Builder()
+                .putString(MedicamentoNotificationWorker.EXTRA_MEDICAMENTO_NOMBRE, medicamento.getNombre())
+                .putString(MedicamentoNotificationWorker.EXTRA_MEDICAMENTO_TIPO, medicamento.getTipo())
+                .putString(MedicamentoNotificationWorker.EXTRA_MEDICAMENTO_DOSIS, medicamento.getDosis())
+                .build();
+
+        long frequencyMinutes = medicamento.getFrecuenciaHoras() * 60L; // frecuencia en minutos
+
+        // Parsear la fecha de inicio del medicamento
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
+        long startMillis = 0L;
+        try {
+            startMillis = sdf.parse(medicamento.getFechaHoraInicio()).getTime();
+        } catch (Exception e) {
+            e.printStackTrace();
+            startMillis = System.currentTimeMillis(); // fallback
+        }
+
+        long nowMillis = System.currentTimeMillis();
+
+        // Calcular retraso inicial: desde ahora hasta la siguiente dosis
+        long delayMillis;
+        if (nowMillis <= startMillis) {
+            // Si aún no llegó la primera dosis, delay es desde ahora hasta la fecha inicio
+            delayMillis = startMillis - nowMillis;
+        } else {
+            // Si ya pasó la fecha inicio, calcular múltiplos de frecuencia para próxima dosis
+            long elapsedSinceStart = nowMillis - startMillis;
+            long periodsPassed = elapsedSinceStart / (frequencyMinutes * 60_000);
+            long nextDoseMillis = startMillis + (periodsPassed + 1) * frequencyMinutes * 60_000;
+            delayMillis = nextDoseMillis - nowMillis;
+        }
+
+        long delayMinutes = Math.max(delayMillis / 60000, 0);
+
+        String workTag = "medicamento_" + medicamento.getNombre();
+
+        PeriodicWorkRequest periodicRequest = new PeriodicWorkRequest.Builder(
+                MedicamentoNotificationWorker.class,
+                frequencyMinutes, TimeUnit.MINUTES)
+                .setInitialDelay(delayMinutes, TimeUnit.MINUTES)
+                .setInputData(inputData)
+                .addTag(workTag)
+                .build();
+
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+                workTag,
+                ExistingPeriodicWorkPolicy.REPLACE,
+                periodicRequest);
+    }
+
 }
