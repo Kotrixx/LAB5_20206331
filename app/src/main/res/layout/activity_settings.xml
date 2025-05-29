@@ -38,16 +38,53 @@
                 android:maxLines="4" />
         </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- Etiqueta para TimePicker -->
+        <!-- Etiqueta frecuencia -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Hora de repetición"
+            android:text="Frecuencia de repetición"
             android:textSize="16sp"
             android:textColor="#333333"
             android:layout_marginBottom="8dp" />
 
-        <!-- TimePicker para hora -->
+        <!-- Selector de frecuencia: número + unidad -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="24dp">
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="Cada...">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/et_frequency_value"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="number" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <Spinner
+                android:id="@+id/spinner_frequency_unit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:backgroundTint="#4DB6AC" />
+        </LinearLayout>
+
+        <!-- Etiqueta para hora -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Hora de inicio"
+            android:textSize="16sp"
+            android:textColor="#333333"
+            android:layout_marginBottom="8dp" />
+
+        <!-- TimePicker -->
         <TimePicker
             android:id="@+id/time_picker_reminder"
             android:layout_width="wrap_content"

@@ -57,4 +57,22 @@ public class UserPreferences {
     public int getReminderMinute() {
         return prefs.getInt(KEY_REMINDER_MINUTE, 0); // default 0 min
     }
+
+    // Guardar frecuencia
+    public void saveReminderFrequency(int value, String unit) {
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putInt("reminder_freq_value", value);
+        editor.putString("reminder_freq_unit", unit);
+        editor.apply();
+    }
+
+    // Obtener frecuencia
+    public int getReminderFrequencyValue() {
+        return prefs.getInt("reminder_freq_value", 24); // valor por defecto 24
+    }
+
+    public String getReminderFrequencyUnit() {
+        return prefs.getString("reminder_freq_unit", "horas");
+    }
+
 }
